@@ -1,5 +1,5 @@
 //Entidade Categoria
-//representa a categoria de um produto (perriferico, hardware, etc.)
+//representa a categoria de um produto (periferico, hardware, etc.)
 namespace TechStore.Domain.Entities
 {
     public class Category

@@ -100,5 +100,3 @@ namespace TechStore.Domain.Entities
         }
     }
 }
-
-//sugestao de commit: Implementando a entidade Product com regras de negócio para gerenciamento de estoque e preço.
