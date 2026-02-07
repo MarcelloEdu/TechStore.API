@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TechStore.Domain.Entities;
 using TechStore.Infrastructure.Data;
+using TechStore.Application.DTOs.Product;
 
 namespace TechStore.Controllers
 {
@@ -18,20 +19,20 @@ namespace TechStore.Controllers
 
         // ===== Criar =====
         [HttpPost]
-        public async Task<IActionResult> CreateProduct(CreateProductRequest request)
+        public async Task<IActionResult> CreateProduct(CreateProductDto dto)
         {
             var categoryExists = await _context.Categories
-                .AnyAsync(c => c.Id == request.CategoryId && c.IsActive);
+                .AnyAsync(c => c.Id == dto.CategoryId && c.IsActive);
 
             if (!categoryExists)
                 return BadRequest("Categoria inválida ou inativa.");
 
             var product = new Product(
-                request.Name,
-                request.Description,
-                request.Price,
-                request.StockQuantity,
-                request.CategoryId
+                dto.Name,
+                dto.Description,
+                dto.Price,
+                dto.StockQuantity,
+                dto.CategoryId
             );
 
             _context.Products.Add(product);
@@ -51,7 +52,7 @@ namespace TechStore.Controllers
             var products = await _context.Products
                 .Include(p => p.Category)
                 .AsNoTracking()
-                .Select(p => new ProductResponse
+                .Select(p => new ProductResponseDto
                 {
                     Id = p.Id,
                     Name = p.Name,
@@ -59,7 +60,7 @@ namespace TechStore.Controllers
                     Price = p.Price,
                     StockQuantity = p.StockQuantity,
                     IsActive = p.IsActive,
-                    Category = new CategoryResponse
+                    Category = new CategorySummaryDto
                     {
                         Id = p.Category.Id,
                         Name = p.Category.Name
@@ -79,7 +80,7 @@ namespace TechStore.Controllers
                 .Include(p => p.Category)
                 .AsNoTracking()
                 .Where(p => p.Id == id)
-                .Select(p => new ProductResponse
+                .Select(p => new ProductResponseDto
                 {
                     Id = p.Id,
                     Name = p.Name,
@@ -87,7 +88,7 @@ namespace TechStore.Controllers
                     Price = p.Price,
                     StockQuantity = p.StockQuantity,
                     IsActive = p.IsActive,
-                    Category = new CategoryResponse
+                    Category = new CategorySummaryDto
                     {
                         Id = p.Category.Id,
                         Name = p.Category.Name
@@ -167,31 +168,4 @@ namespace TechStore.Controllers
         }
 
     }
-
-    // ===== DTO =====
-    public record CreateProductRequest(
-        string Name,
-        string? Description,
-        decimal Price,
-        int StockQuantity,
-        int CategoryId
-    );
-
-    public class ProductResponse
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = null!;
-        public string? Description { get; set; }
-        public decimal Price { get; set; }
-        public int StockQuantity { get; set; }
-        public bool IsActive { get; set; }
-        public CategoryResponse Category { get; set; } = null!;
-    }
-
-    public class CategoryResponse
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = null!;
-    }
-
 }

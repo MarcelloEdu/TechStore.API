@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TechStore.Application.DTOs.Category;
 using TechStore.Domain.Entities;
 using TechStore.Infrastructure.Data;
 
@@ -18,11 +19,11 @@ namespace TechStore.Controllers
 
         // ===== Criar =====
         [HttpPost]
-        public async Task<IActionResult> CreateCategory(CreateCategoryRequest request)
+        public async Task<IActionResult> CreateCategory(CreateCategoryDto dto)
         {
             var category = new Category(
-                request.Name,
-                request.Description
+                dto.Name,
+                dto.Description
             );
 
             _context.Categories.Add(category);
@@ -90,7 +91,4 @@ namespace TechStore.Controllers
             return NoContent();
         }
     }
-
-    // ===== DTO =====
-    public record CreateCategoryRequest(string Name, string? Description);
 }
