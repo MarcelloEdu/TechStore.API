@@ -13,6 +13,8 @@ namespace TechStore.Infrastructure.Data
 
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Product> Products => Set<Product>();
+        public DbSet<Order> Orders => Set<Order>();
+        public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +53,37 @@ namespace TechStore.Infrastructure.Data
                       .IsRequired();
             });
 
+            // ===== Order =====
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasKey(o => o.Id);
+
+                entity.Property(o => o.CreatedAt)
+                      .IsRequired();
+
+                entity.Property(o => o.TotalAmount)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(o => o.Status)
+                      .IsRequired();
+
+                entity.HasMany(o => o.Items)
+                      .WithOne(oi => oi.Order)
+                      .HasForeignKey(oi => oi.OrderId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ===== OrderItem =====
+            modelBuilder.Entity<OrderItem>(entity =>
+            {
+                entity.HasKey(oi => oi.Id);
+
+                entity.Property(oi => oi.UnitPrice)
+                      .HasColumnType("decimal(18,2)");
+
+                entity.Property(oi => oi.Quantity)
+                      .IsRequired();
+            });
          }
     }
 }
