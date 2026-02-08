@@ -35,6 +35,24 @@ public class OrderController : ControllerBase
         if (products.Count != productIds.Count)
             return BadRequest("Um ou mais produtos são inválidos ou estão inativos.");
 
+        // ===== Validação de estoque (#12) =====
+        foreach (var item in request.Items)
+        {
+            if (item.Quantity <= 0)
+                return BadRequest("A quantidade deve ser maior que zero.");
+
+            var product = products.First(p => p.Id == item.ProductId);
+
+            if (product.StockQuantity < item.Quantity)
+            {
+                return BadRequest(
+                    $"Estoque insuficiente para o produto '{product.Name}'. " +
+                    $"Disponível: {product.StockQuantity}, solicitado: {item.Quantity}"
+                );
+            }
+        }
+
+        // ===== Criar itens do pedido =====
         var orderItems = request.Items.Select(item =>
         {
             var product = products.First(p => p.Id == item.ProductId);
