@@ -10,31 +10,22 @@ namespace TechStore.Domain.Entities
         public int ProductId { get; private set; }
         public Product Product { get; private set; } = null!;
 
-        public decimal UnitPrice { get; private set; }
         public int Quantity { get; private set; }
+        public decimal UnitPrice { get; private set; }
+        public decimal Subtotal { get; private set; }
 
-        public DateTime CreatedAt { get; private set; }
+        private OrderItem() { }
 
-        public decimal Subtotal => UnitPrice * Quantity;
-
-        protected OrderItem() { } // EF
-
-        public OrderItem(
-            int productId,
-            decimal unitPrice,
-            int quantity
-        )
+        public OrderItem(int productId, int quantity, decimal unitPrice)
         {
             if (quantity <= 0)
-                throw new ArgumentException("Quantidade deve ser maior que zero.");
-
-            if (unitPrice < 0)
-                throw new ArgumentException("Preço unitário não pode ser negativo.");
+                throw new InvalidOperationException("Quantidade deve ser maior que zero.");
 
             ProductId = productId;
-            UnitPrice = unitPrice;
             Quantity = quantity;
-            CreatedAt = DateTime.UtcNow;
+            UnitPrice = unitPrice;
+            Subtotal = quantity * unitPrice;
         }
     }
 }
+
