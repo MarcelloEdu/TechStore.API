@@ -111,4 +111,45 @@ public class OrderController : ControllerBase
             })
         });
     }
+
+    // ===== Confirmar Pedido =====
+    //após uma compra ser finalizada, após sua confirmação o estoque do produto deve ser atualizado
+    
+    [HttpPut("{id:int}/confirm")]
+    public async Task<IActionResult> ConfirmOrder(int id)
+    {
+        var order = await _context.Orders
+            .Include(o => o.Items)
+            .ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(o => o.Id == id);
+
+        if (order == null)
+            return NotFound("Pedido não encontrado.");
+
+        if (order.Status != Domain.Enums.OrderStatus.Pending)
+            return BadRequest("Apenas pedidos pendentes podem ser confirmados.");
+
+        // ===== Validação final de estoque =====
+        foreach (var item in order.Items)
+        {
+            if (item.Product.StockQuantity < item.Quantity)
+            {
+                return BadRequest(
+                    $"Estoque insuficiente para o produto '{item.Product.Name}'."
+                );
+            }
+        }
+
+        // ===== Subtração de estoque =====
+        foreach (var item in order.Items)
+        {
+            item.Product.DecreaseStock(item.Quantity);
+        }
+
+        order.Confirm();
+
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
