@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TechStore.Domain.Entities;
@@ -122,7 +123,7 @@ namespace TechStore.Controllers
             });
         }
 
-        // ===== Aumentar estoque =====
+        // ===== Repor estoque =====
         [HttpPut("{id:int}/stock/increase")]
         public async Task<IActionResult> IncreaseStock(int id, IncreaseStockDto dto)
         {

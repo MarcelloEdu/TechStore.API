@@ -35,6 +35,7 @@ public class OrderController : ControllerBase
         if (products.Count != productIds.Count)
             return BadRequest("Um ou mais produtos são inválidos ou estão inativos.");
 
+        // ===== Validação de estoque (#12) =====
         foreach (var item in request.Items)
         {
             if (item.Quantity <= 0)
@@ -113,7 +114,7 @@ public class OrderController : ControllerBase
 
     // ===== Confirmar Pedido =====
     //após uma compra ser finalizada, após sua confirmação o estoque do produto deve ser atualizado
-
+    
     [HttpPut("{id:int}/confirm")]
     public async Task<IActionResult> ConfirmOrder(int id)
     {
