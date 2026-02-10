@@ -122,6 +122,22 @@ namespace TechStore.Controllers
             });
         }
 
+        // ===== Aumentar estoque =====
+        [HttpPut("{id:int}/stock/increase")]
+        public async Task<IActionResult> IncreaseStock(int id, IncreaseStockDto dto)
+        {
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null)
+                return NotFound();
+
+            product.IncreaseStock(dto.Quantity);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
         // ===== Ativar =====
         [HttpPut("{id:int}/activate")]
         public async Task<IActionResult> ActivateProduct(int id)

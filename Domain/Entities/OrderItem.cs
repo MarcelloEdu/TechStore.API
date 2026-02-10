@@ -14,6 +14,7 @@ namespace TechStore.Domain.Entities
         public decimal UnitPrice { get; private set; }
         public decimal Subtotal { get; private set; }
 
+        //EF
         private OrderItem() { }
 
         public OrderItem(int productId, int quantity, decimal unitPrice)
