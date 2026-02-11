@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using TechStore.Domain.Entities;
 using TechStore.Infrastructure.Data;
 using TechStore.Application.DTOs.Product;
+using TechStore.Domain.Enums;   
 
 namespace TechStore.Controllers
 {
@@ -17,15 +18,14 @@ namespace TechStore.Controllers
         {
             _context = context;
         }
-
         // ===== Criar =====
         [HttpPost]
         public async Task<IActionResult> CreateProduct(CreateProductDto dto)
         {
-            var categoryExists = await _context.Categories
-                .AnyAsync(c => c.Id == dto.CategoryId && c.IsActive);
+            var category = await _context.Categories
+                .FirstOrDefaultAsync(c => c.Id == dto.CategoryId && c.IsActive);
 
-            if (!categoryExists)
+            if (category == null)
                 return BadRequest("Categoria inválida ou inativa.");
 
             var product = new Product(
@@ -39,20 +39,37 @@ namespace TechStore.Controllers
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
+            var response = new ProductResponseDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity,
+                IsActive = product.IsActive,
+                Category = new CategorySummaryDto
+                {
+                    Id = category.Id,
+                    Name = category.Name
+                }
+            };
+
             return CreatedAtAction(
-                nameof(GetProductById),
+                nameof(GetProducts),
                 new { id = product.Id },
-                product
+                response
             );
         }
 
-        // ===== Listar Todos =====
+
+        // ===== Listar Produtos (com filtros opcionais) =====
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts(
+        public async Task<IActionResult> GetProducts(
+            [FromQuery] int? id,
             [FromQuery] string? name,
             [FromQuery] decimal? minPrice,
             [FromQuery] decimal? maxPrice,
-            [FromQuery] string? orderBy
+            [FromQuery] ProductOrderBy? orderBy
         )
         {
             var query = _context.Products
@@ -60,26 +77,39 @@ namespace TechStore.Controllers
                 .AsNoTracking()
                 .AsQueryable();
 
+            // ===== Filtro por ID =====
+            if (id.HasValue)
+                query = query.Where(p => p.Id == id.Value);
+
+            // ===== Filtros opcionais =====
             if (!string.IsNullOrWhiteSpace(name))
                 query = query.Where(p => p.Name.Contains(name));
+
             if (minPrice.HasValue)
                 query = query.Where(p => p.Price >= minPrice.Value);
+
             if (maxPrice.HasValue)
                 query = query.Where(p => p.Price <= maxPrice.Value);
 
+            // ===== Ordenação =====
             query = orderBy switch
             {
-                "PriceAsc" => query.OrderBy(p => p.Price),
-                "PriceDesc" => query.OrderByDescending(p => p.Price),
+                ProductOrderBy.PriceAsc => query.OrderBy(p => p.Price),
+
+                ProductOrderBy.PriceDesc => query.OrderByDescending(p => p.Price),
+
+                ProductOrderBy.NameAsc => query.OrderBy(p => p.Name),
+
+                ProductOrderBy.NameDesc => query.OrderByDescending(p => p.Name),
 
                 _ => query.OrderByDescending(p =>
                     _context.OrderItems
                         .Where(oi => oi.ProductId == p.Id)
                         .Sum(oi => (int?)oi.Quantity) ?? 0
-                )
-        };
+    )
+            };
 
-        var products = await query
+            var products = await query
                 .Select(p => new ProductResponseDto
                 {
                     Id = p.Id,
@@ -96,59 +126,13 @@ namespace TechStore.Controllers
                 })
                 .ToListAsync();
 
+            // Se foi passado ID, retorna objeto único
+            if (id.HasValue)
+                return products.Any() ? Ok(products.First()) : NotFound();
+
             return Ok(products);
         }
 
-
-        // ===== Listar Por ID =====
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetProductById(int id)
-        {
-            var product = await _context.Products
-                .Include(p => p.Category)
-                .AsNoTracking()
-                .Where(p => p.Id == id)
-                .Select(p => new ProductResponseDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Price = p.Price,
-                    StockQuantity = p.StockQuantity,
-                    IsActive = p.IsActive,
-                    Category = new CategorySummaryDto
-                    {
-                        Id = p.Category.Id,
-                        Name = p.Category.Name
-                    }
-                })
-                .FirstOrDefaultAsync();
-
-            if (product == null)
-                return NotFound();
-
-            return Ok(product);
-        }
-
-        // ===== Verificar Estoque =====
-        [HttpGet("{id:int}/stock")]
-        public async Task<IActionResult> GetProductStock(int id)
-        {
-            var product = await _context.Products
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (product == null)
-                return NotFound();
-
-            return Ok(new
-            {
-                product.Id,
-                product.Name,
-                product.StockQuantity,
-                product.IsActive
-            });
-        }
 
         // ===== Repor estoque =====
         [HttpPut("{id:int}/stock/increase")]
