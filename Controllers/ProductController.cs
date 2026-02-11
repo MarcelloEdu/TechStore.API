@@ -48,11 +48,38 @@ namespace TechStore.Controllers
 
         // ===== Listar Todos =====
         [HttpGet]
-        public async Task<IActionResult> GetAllProducts()
+        public async Task<IActionResult> GetAllProducts(
+            [FromQuery] string? name,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice,
+            [FromQuery] string? orderBy
+        )
         {
-            var products = await _context.Products
+            var query = _context.Products
                 .Include(p => p.Category)
                 .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(p => p.Name.Contains(name));
+            if (minPrice.HasValue)
+                query = query.Where(p => p.Price >= minPrice.Value);
+            if (maxPrice.HasValue)
+                query = query.Where(p => p.Price <= maxPrice.Value);
+
+            query = orderBy switch
+            {
+                "PriceAsc" => query.OrderBy(p => p.Price),
+                "PriceDesc" => query.OrderByDescending(p => p.Price),
+
+                _ => query.OrderByDescending(p =>
+                    _context.OrderItems
+                        .Where(oi => oi.ProductId == p.Id)
+                        .Sum(oi => (int?)oi.Quantity) ?? 0
+                )
+        };
+
+        var products = await query
                 .Select(p => new ProductResponseDto
                 {
                     Id = p.Id,
