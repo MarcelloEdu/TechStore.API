@@ -30,35 +30,35 @@ namespace TechStore.Controllers
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(
-                nameof(GetCategoryById),
+                nameof(GetAllCategories),
                 new { id = category.Id },
                 category
             );
         }
 
-        // ===== Listar Todos =====
+        // ===== Listar =====
         [HttpGet]
-        public async Task<IActionResult> GetAllCategories()
+        public async Task<IActionResult> GetAllCategories(
+            [FromQuery] int? id
+        )
         {
+            if(id.HasValue)
+            {
+                var category = await _context.Categories
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == id.Value);
+
+                if (category == null)
+                    return NotFound();
+
+                return Ok(category);
+            }
+
             var categories = await _context.Categories
                 .AsNoTracking()
                 .ToListAsync();
 
             return Ok(categories);
-        }
-
-        // ===== Listar Por ID =====
-        [HttpGet("{id:int}")]
-        public async Task<IActionResult> GetCategoryById(int id)
-        {
-            var category = await _context.Categories
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id);
-
-            if (category == null)
-                return NotFound();
-
-            return Ok(category);
         }
 
         // ===== Desativar =====

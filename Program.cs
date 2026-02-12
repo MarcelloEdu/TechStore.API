@@ -14,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );
 
+// converter enum (para o swagger mostrar o nome do enum ao invés do número em product)
 builder.Services
     .AddControllers()
     .AddJsonOptions(options =>
