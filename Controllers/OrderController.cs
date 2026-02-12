@@ -35,7 +35,7 @@ public class OrderController : ControllerBase
         if (products.Count != productIds.Count)
             return BadRequest("Um ou mais produtos são inválidos ou estão inativos.");
 
-        // ===== Validação de estoque (#12) =====
+        // ===== Validação de estoque =====
         foreach (var item in request.Items)
         {
             if (item.Quantity <= 0)

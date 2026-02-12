@@ -106,7 +106,7 @@ namespace TechStore.Controllers
                     _context.OrderItems
                         .Where(oi => oi.ProductId == p.Id)
                         .Sum(oi => (int?)oi.Quantity) ?? 0
-    )
+                )
             };
 
             var products = await query
